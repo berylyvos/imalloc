@@ -24,6 +24,7 @@ extern uintptr_t heap[HEAP_CAP / WORD];
 void *heap_alloc(size_t bytes);
 void heap_free(void *ptr);
 void heap_collect();
+void heap_dump();
 
 typedef struct {
     uintptr_t *start;

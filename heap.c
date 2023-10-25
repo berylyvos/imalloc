@@ -131,3 +131,9 @@ void heap_collect()
 {
     UNIMPLEMENTED;
 }
+
+void heap_dump()
+{
+    chunk_list_dump(&alloced_chunks);
+    chunk_list_dump(&freed_chunks);
+}
