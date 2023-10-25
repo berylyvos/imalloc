@@ -3,7 +3,14 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#define WORD sizeof(uintptr_t)
 #define HEAP_CAP 640000
+
+static_assert(HEAP_CAP % WORD == 0, 
+              "The heap capacity is not divisible by "
+              "the size of the pointer. Of the platform.");
+uintptr_t heap[HEAP_CAP / WORD] = {0};
+
 #define CHUNK_LIST_CAP 1024
 
 #define UNIMPLEMENTED \
@@ -14,7 +21,7 @@
     } while(0)
 
 typedef struct {
-    void *start;
+    uintptr_t *start;
     size_t size;
 } Chunk;
 
@@ -24,7 +31,7 @@ typedef struct {
     Chunk chunks[CHUNK_LIST_CAP];
 } Chunk_List;
 
-int chunk_list_find(const Chunk_List *list, void *ptr)
+int chunk_list_find(const Chunk_List *list, uintptr_t *ptr)
 {
     int l = 0, r = list->count - 1;
     while (l < r) {
@@ -94,12 +101,10 @@ void chunk_list_dump(const Chunk_List *list)
     printf("Chunks (%zu):\n", list->count);
     for (size_t i = 0; i < list->count; ++i) {
         printf("  start: %p, size: %zu\n",
-                list->chunks[i].start,
+                (void*) list->chunks[i].start,
                 list->chunks[i].size);
     }
 }
-
-char heap[HEAP_CAP] = {0};
 
 Chunk_List alloced_chunks = {0};
 Chunk_List freed_chunks = {
@@ -110,8 +115,10 @@ Chunk_List freed_chunks = {
 };
 Chunk_List tmp_chunks = {0};
 
-void *heap_alloc(size_t size) 
+void *heap_alloc(size_t bytes) 
 {
+    const size_t size = (bytes + WORD - 1) / WORD;
+
     if (size > 0) {
         chunk_list_merge(&tmp_chunks, &freed_chunks);
         freed_chunks = tmp_chunks;
