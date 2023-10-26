@@ -22,6 +22,7 @@ static_assert(HEAP_CAP_BYTES % WORD == 0,
 #define HEAP_CAP_WORDS (HEAP_CAP_BYTES / WORD)
 
 extern uintptr_t heap[HEAP_CAP_WORDS];
+extern uintptr_t *stack_base;
 
 void *heap_alloc(size_t bytes);
 void heap_free(void *ptr);
@@ -46,6 +47,6 @@ int chunk_list_find(const Chunk_List *list, uintptr_t *ptr);
 void chunk_list_insert(Chunk_List *list, void *start, size_t size);
 void chunk_list_remove(Chunk_List *list, size_t index);
 void chunk_list_merge(Chunk_List *dst, Chunk_List *src);
-void chunk_list_dump(const Chunk_List *list);
+void chunk_list_dump(const Chunk_List *list, const char *name);
 
 #endif // HEAP_H_

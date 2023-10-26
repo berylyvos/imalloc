@@ -1,7 +1,10 @@
 #include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
 #include "heap.h"
 
 uintptr_t heap[HEAP_CAP_WORDS] = {0};
+uintptr_t *stack_base = 0;
 
 Chunk_List alloced_chunks = {0};
 Chunk_List freed_chunks = {
@@ -11,6 +14,10 @@ Chunk_List freed_chunks = {
     },
 };
 Chunk_List tmp_chunks = {0};
+
+bool reachable_chunks[CHUNK_LIST_CAP] = {0};
+void *to_free_chunks[CHUNK_LIST_CAP] = {0};
+size_t to_free_chunks_count = 0;
 
 int chunk_list_find(const Chunk_List *list, uintptr_t *ptr)
 {
@@ -77,9 +84,9 @@ void chunk_list_merge(Chunk_List *dst, Chunk_List *src)
     }
 }
 
-void chunk_list_dump(const Chunk_List *list)
+void chunk_list_dump(const Chunk_List *list, const char *name)
 {
-    printf("Chunks (%zu):\n", list->count);
+    printf("%s Chunks (%zu):\n", name, list->count);
     for (size_t i = 0; i < list->count; ++i) {
         printf("  start: %p, size: %zu\n",
                 (void*) list->chunks[i].start,
@@ -127,13 +134,43 @@ void heap_free(void *ptr)
     }
 }
 
+static void mark_region(uintptr_t *start, uintptr_t *end)
+{
+    for (; start < end; start++) {
+        uintptr_t *p = (uintptr_t*) *start;
+        for (size_t i = 0; i < alloced_chunks.count; ++i) {
+            Chunk chunk = alloced_chunks.chunks[i];
+            if (chunk.start <= p && p < chunk.start + chunk.size) {
+                if (!reachable_chunks[i]) {
+                    printf("REACHED: %p\n", (void*)p);
+                    reachable_chunks[i] = true;
+                    mark_region(chunk.start, chunk.start + chunk.size);
+                }
+            }
+        }
+    }
+}
+
 void heap_collect()
 {
-    UNIMPLEMENTED;
+    uintptr_t *stack_start = (uintptr_t*)__builtin_frame_address(0);
+    memset(reachable_chunks, 0, sizeof(reachable_chunks));
+    mark_region(stack_start, stack_base + 1);
+
+    to_free_chunks_count = 0;
+    for (size_t i = 0; i < alloced_chunks.count; ++i) {
+        if (!reachable_chunks[i]) {
+            to_free_chunks[to_free_chunks_count++] = alloced_chunks.chunks[i].start;
+        }
+    }
+
+    for (size_t i = 0; i < to_free_chunks_count; ++i) {
+        heap_free(to_free_chunks[i]);
+    }
 }
 
 void heap_dump()
 {
-    chunk_list_dump(&alloced_chunks);
-    chunk_list_dump(&freed_chunks);
+    chunk_list_dump(&alloced_chunks, "Alloced");
+    chunk_list_dump(&freed_chunks, "Freed");
 }

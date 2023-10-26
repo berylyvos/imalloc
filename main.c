@@ -67,18 +67,18 @@ void destroy_tree(Node *root)
 
 int main()
 {
-    Node *root = generate_tree(0);
-    printf("root: %p\n", (void*) root);
-    heap_dump();
-
-    test_scan_heap_pointers();
-
-    destroy_tree(root);
-    printf("\nafter destroying tree\n");
-    heap_dump();
+    stack_base = (uintptr_t*)__builtin_frame_address(0);
 
     test_heap_alloc_free();
     printf("\ntest_heap_alloc_free()\n");
+
+    Node *root = generate_tree(0);
+    printf("root: %p\n", (void*) root);
+    heap_dump();
+    test_scan_heap_pointers();
+
+    printf("--------- heap_collect() ---------\n");
+    heap_collect();
     heap_dump();
 
     return 0;
