@@ -18,6 +18,22 @@ void test_heap_alloc_free()
     heap_alloc(10);
 }
 
+void test_scan_heap_pointers()
+{
+    printf("\nscan heap pointers ---------------\n");
+    size_t count = 0;
+    for (size_t i = 0; i < alloced_chunks.count; ++i) {
+        for (size_t j = 0; j < alloced_chunks.chunks[i].size; ++j) {
+            uintptr_t *p = (uintptr_t*) (*(alloced_chunks.chunks[i].start + j));
+            if (heap <= p && p <= heap + HEAP_CAP_WORDS) {
+                printf("DETECTED HEAP POINTER: %p\n", (void*) p);
+                ++count;
+            }
+        }
+    }
+    printf("Detected %zu heap pointers\n", count);
+}
+
 typedef struct Node Node;
 struct Node {
     char x;
@@ -55,8 +71,10 @@ int main()
     printf("root: %p\n", (void*) root);
     heap_dump();
 
+    test_scan_heap_pointers();
+
     destroy_tree(root);
-    printf("\nafter destroying tree...\n");
+    printf("\nafter destroying tree\n");
     heap_dump();
 
     test_heap_alloc_free();

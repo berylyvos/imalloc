@@ -12,14 +12,16 @@
         abort(); \
     } while(0)
 
-#define HEAP_CAP 640000
+#define HEAP_CAP_BYTES 640000
 #define CHUNK_LIST_CAP 1024
 #define WORD sizeof(uintptr_t)
 
-static_assert(HEAP_CAP % WORD == 0, 
+static_assert(HEAP_CAP_BYTES % WORD == 0, 
               "The heap capacity is not divisible by "
               "the size of the pointer. Of the platform.");
-extern uintptr_t heap[HEAP_CAP / WORD];
+#define HEAP_CAP_WORDS (HEAP_CAP_BYTES / WORD)
+
+extern uintptr_t heap[HEAP_CAP_WORDS];
 
 void *heap_alloc(size_t bytes);
 void heap_free(void *ptr);
